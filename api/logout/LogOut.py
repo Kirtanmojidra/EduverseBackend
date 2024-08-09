@@ -1,5 +1,5 @@
 from flask import request,make_response
-from ResponceHandler import Responce
+from ..Responcehandler import Responce
 def process():
     try:
         res = make_response({"data":{},"message":"LogOut","status_code":200})

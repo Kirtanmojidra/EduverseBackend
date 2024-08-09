@@ -1,8 +1,8 @@
 from flask  import request,jsonify
 import uuid
 from datetime import date
-from JWT import JWT
-from ResponceHandler import Responce
+from ..JWT import JWT
+from ..Responcehandler import Responce
 allowed_filenames = ['pdf']
 pdfpath = r"C:\Users\kirta\OneDrive\Documents\FlaskUserAuth\uploadpdf/"
 sem1=["sem-1-syllabus",

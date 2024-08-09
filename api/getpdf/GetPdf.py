@@ -1,6 +1,6 @@
 from flask import request
-from JWT import JWT
-from ResponceHandler import Responce
+from ..JWT import JWT
+from ..Responcehandler import Responce
 
 def process(cur):
     if not request.args.get("subject") or not request.args.get("sem"):
