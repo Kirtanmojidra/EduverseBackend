@@ -29,6 +29,10 @@ con = psycopg2.connect(
     database = app.config["MYSQL_DB"],
     )
 cur = con.cursor()
+if(cur):
+    print("Database connected")
+else:
+    print("Database not connected")
 pdfpath = r"C:\Users\kirta\OneDrive\Documents\FlaskUserAuth\uploadpdf/"
 @app.route("/api/v1/login",methods=["POST"])
 def login():
@@ -168,7 +172,7 @@ def signup():
                             else:
                                 return Responce.send(401,{},"Eduverse supports only Gmail addresses.")
                         except Exception as e:
-                            print(e)
+                            print(f"DATABASE Error: {e}")
                             return Responce.send(500,{},"server Error")
                 except Exception as e:
                     print(e)
