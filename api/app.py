@@ -1,4 +1,4 @@
-from flask  import Flask,request,make_response,send_file
+from flask  import Flask,request,make_response,send_file,jsonify
 import os
 from .JWT import JWT
 from .logout import LogOut
@@ -153,7 +153,7 @@ def signup():
                                         print(userID)
                                         cookie = JWT.encode({"data": f"{userID}"})
                                         cur.execute(f"insert into otp values('{userID}','{otp}');")
-                                        res = make_response({"message":"Otp sended to email check now."})
+                                        res = make_response(jsonify({"message":"Otp sended to email check now."}))
                                         res.set_cookie("session",cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
                                         cur.execute(f"insert into users values('{userID}','{data['username']}','{data['password']}','{data['fullname']}','{data['email']}','false','pending');")
                                         con.commit()
