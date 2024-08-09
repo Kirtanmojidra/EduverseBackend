@@ -14,8 +14,8 @@ def process(cur):
                 return Responce.send(200,{"username":row[1],"fullname":row[3],"isadmin":row[5]},"")
             else:
                 return Responce.send(401,{},"invalid user data")
-        except:
+        except Exception as e:
+            print(f"Fetching Error: {e}")
             return Responce.send(500,{},"server in truble")
-        print(row)
     except:
         return  Responce.send(401,{},"invalid cookie")
