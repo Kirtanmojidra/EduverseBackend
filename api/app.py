@@ -141,6 +141,7 @@ def signup():
                     row = cur.fetchone()
                     print("got response form server")
                     if row :
+                        print("sending error username and email already used")
                         return Responce.send(409,{},"username or email already used")
                     else:
                         try:
