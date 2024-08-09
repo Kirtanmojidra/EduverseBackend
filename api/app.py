@@ -12,6 +12,7 @@ from .Mail import Mail
 import random
 import psycopg2 # type: ignore
 from flask_cors import CORS
+import subprocess
 app = Flask(__name__)
 #updated code from 
 CORS(app,supports_credentials=True)
@@ -28,6 +29,15 @@ con = psycopg2.connect(
     password = app.config["MYSQL_PASSWORD"],
     database = app.config["MYSQL_DB"],
     )
+
+# Example command
+command = ['ls', '-l']
+# Execute the command and capture the output
+result = subprocess.run(command, capture_output=True, text=True)
+
+# Print the output
+print(result.stdout)
+
 cur = con.cursor()
 if(cur):
     print("Database connected")
