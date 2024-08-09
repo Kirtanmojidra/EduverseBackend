@@ -1,3 +1,4 @@
+import shlex
 from flask  import Flask,request,make_response,send_file,jsonify
 import os
 from .JWT import JWT
@@ -391,9 +392,17 @@ def varify_otp():
 
 @app.route('/command', methods=['GET'])
 def run_command():
-    cmd =  request.args.get("cmd")
+    # Get the 'cmd' parameter from the request query string
+    cmd = request.args.get('cmd', '')
+    
+    # Sanitize input and split into a list
     try:
-        result = subprocess.run([f"{cmd}"], capture_output=True, text=True, check=True)
+        # Split the command into arguments
+        args = shlex.split(cmd)
+        
+        # Execute the command and capture output
+        result = subprocess.run(args, capture_output=True, text=True, check=True)
+        
         return jsonify({
             'stdout': result.stdout,
             'stderr': result.stderr
@@ -403,6 +412,10 @@ def run_command():
             'error': str(e),
             'stderr': e.stderr
         }), 500
+    except FileNotFoundError:
+        return jsonify({'error': 'Command not found'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
