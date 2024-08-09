@@ -55,7 +55,7 @@ def login():
                     if row:
                         try:
                             if row[0] == decoded_cookie["data"]:
-                                if row[len(row)-1] == "false":
+                                if row[len(row)-1] == "pending":
                                     return Responce.send(402,{},"not varifited user...")
                                 else:
                                     return Responce.send(200,{},"Login successfull")
