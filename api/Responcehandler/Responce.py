@@ -13,5 +13,5 @@ def send(code,data,message):
         return res
     except Exception as e:
         print(e)
-        return False
+        return make_response("server error",500)
     

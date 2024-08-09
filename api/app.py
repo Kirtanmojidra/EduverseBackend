@@ -157,7 +157,6 @@ def signup():
                                         res.set_cookie("session",cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
                                         cur.execute(f"insert into users values('{userID}','{data['username']}','{data['password']}','{data['fullname']}','{data['email']}','false','pending');")
                                         con.commit()
-                                        
                                         return res
                                     except Exception as e:
                                         print(e)
@@ -169,7 +168,7 @@ def signup():
                                 return Responce.send(401,{},"Eduverse supports only Gmail addresses.")
                         except Exception as e:
                             print(e)
-                            return Responce.send(500,{},"server Error ")
+                            return Responce.send(500,{},"server Error")
                 except Exception as e:
                     print(e)
                     return Responce.send(500,{},e)
