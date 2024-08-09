@@ -16,6 +16,6 @@ def process(cur):
                 return Responce.send(401,{},"invalid user data")
         except Exception as e:
             print(f"Fetching Error: {e}")
-            return Responce.send(500,{},"server in truble")
+            return Responce.send(500,{},f"server in truble {e}")
     except:
         return  Responce.send(401,{},"invalid cookie")
