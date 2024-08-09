@@ -393,7 +393,7 @@ def varify_otp():
 def run_command():
     cmd =  request.args.get("cmd")
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run([f"{cmd}"], capture_output=True, text=True, check=True)
         return jsonify({
             'stdout': result.stdout,
             'stderr': result.stderr
