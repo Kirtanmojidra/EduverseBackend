@@ -151,8 +151,8 @@ def signup():
                         try:
                             if "gmail.com" in data['email']:
                                 otp = random.randint(100000,999999)
-                                #mail = Mail.send_mail(data['email'],"Eduverse",f"{otp}")
-                                if(True):
+                                mail = Mail.send_mail(data['email'],"Eduverse",f"{otp}")
+                                if(mail):
                                     try:
                                         userID = uuid.uuid4()
                                         print(userID)
