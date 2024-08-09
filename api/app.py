@@ -10,7 +10,7 @@ import json
 import uuid
 from .Mail import Mail
 import random
-import psycopg2
+import psycopg2 # type: ignore
 from flask_cors import CORS
 app = Flask(__name__)
 #updated code from 
