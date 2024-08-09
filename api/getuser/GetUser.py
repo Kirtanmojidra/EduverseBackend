@@ -8,7 +8,7 @@ def process(cur):
         decoded_cookie = JWT.decode(cookie)
         print(decoded_cookie["data"])
         try:
-            cur.execute(f'select * from users where userid="{decoded_cookie["data"]}";')
+            cur.execute(f"select * from users where userid='{decoded_cookie['data']}';")
             row = cur.fetchone()
             if row:
                 return Responce.send(200,{"username":row[1],"fullname":row[3],"isadmin":row[5]},"")
