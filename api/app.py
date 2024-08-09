@@ -20,7 +20,6 @@ app.config["MYSQL_HOST"] = "ep-aged-rain-a472d7qt-pooler.us-east-1.aws.neon.tech
 app.config["MYSQL_USER"] = "default"
 app.config["MYSQL_DB"] = "verceldb"
 app.config["MYSQL_PASSWORD"] ="2pVZitHFc5aY"
-print(os.system("pwd"))
 #hwllo updated
 con = psycopg2.connect(
     host = app.config["MYSQL_HOST"],
