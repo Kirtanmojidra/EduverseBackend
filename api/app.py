@@ -30,11 +30,8 @@ con = psycopg2.connect(
     database = app.config["MYSQL_DB"],
     )
 cur = con.cursor()
-if(cur):
-    print("Database connected")
-else:
-    print("Database not connected")
-pdfpath = r"/opt/render/project/src/api/uploadpdf/"
+rootdir = os.getcwd()
+pdfpath = rootdir + "/api/uploadpdf/"
 @app.route("/api/v1/login",methods=["POST"])
 def login():
     try :
