@@ -34,7 +34,7 @@ if(cur):
     print("Database connected")
 else:
     print("Database not connected")
-pdfpath = r"C:\Users\kirta\OneDrive\Documents\FlaskUserAuth\uploadpdf/"
+pdfpath = r"/opt/render/project/src/api/uploadpdf/"
 @app.route("/api/v1/login",methods=["POST"])
 def login():
     try :
