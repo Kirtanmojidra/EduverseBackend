@@ -61,12 +61,12 @@ def login():
                                 else:
                                     return Responce.send(200,{},"Login successfull")
                             else:
-                                return Responce.send(401,{},"Invalid Cookie")
+                                pass
                         except Exception as e:
                             print(e)
                             return Responce.send(500,{},"Error while checking cookie data is valid?")
                     else:
-                        return Responce.send(401,{},"Invalid Cookie")
+                        pass
         except Exception as e:
             print("Error",e)
         try:
@@ -84,7 +84,9 @@ def login():
             if username and password:
                 try:
                     cur.execute(f"SELECT * FROM users where username='{username}' and password='{password}';")
+                    print(f"SELECT * FROM users where username='{username}' and password='{password}';")
                     row = cur.fetchone()
+                    print(row)
                     if row:
                         pass
                     else:

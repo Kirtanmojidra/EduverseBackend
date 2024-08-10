@@ -4,7 +4,7 @@ from datetime import date
 from ..JWT import JWT
 from ..Responcehandler import Responce
 allowed_filenames = ['pdf']
-pdfpath = r"C:\Users\kirta\OneDrive\Documents\FlaskUserAuth\uploadpdf/"
+pdfpath = r"/opt/render/project/src/api/uploadpdf/"
 sem1=["sem-1-syllabus",
     "DSC-C-BCA-111T",
     "DSC-M-BCA-113T",
