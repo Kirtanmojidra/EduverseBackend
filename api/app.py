@@ -83,15 +83,13 @@ def login():
                 return Responce.send(401,{},"username or password is not in body")
             if username and password:
                 try:
-                    print(f"SELECT * FROM users where username='{username}' and password='{password}';")
                     cur.execute(f"SELECT * FROM users where username='{username}' and password='{password}';")
                     row = cur.fetchone()
-                    print(row)
                     if row:
                         if row[len(row)-1] == "pending":
                             return Responce.send(402,{},"not varifited user...")
                     else:
-                        return Responce.send(401,{},f"invalid username and password {row} {username} {password}")
+                        return Responce.send(401,{},f"invalid username and password")
                 except Exception as e:
                     print(e)
                 try :
@@ -114,7 +112,7 @@ def login():
                 except Exception as e:
                     print("eroor :", e)
                     print(f"{row}")
-                    return Responce.send(401,{},f"username and password is invalid:{row}")
+                    return Responce.send(401,{},f"username and password is invalid")
             else :
                 return "Username or Password should not be Empty"
         else :
