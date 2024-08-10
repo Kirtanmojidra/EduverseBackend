@@ -103,7 +103,7 @@ def login():
                         except Exception as e:
                             print("Jwt Error:",e)
                         if jwt_cookie:
-                            res = make_response(200,{},"Authenticated Successfully")
+                            res = Responce.send(200,{},"Authenticated Successfully")
                             res.set_cookie('session',jwt_cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
                             return res
                         else:
