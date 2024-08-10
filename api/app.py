@@ -203,7 +203,7 @@ def pdf(id):
     title = ""
     try:
         if id[0] and id[1]== 'pdf':
-            fullpath = '/home/kirtanmojidra/Eduverse/uploadpdf'+ '/'+id[0]+".pdf"
+            fullpath = pdfpath + id[0] + ".pdf"
             if os.path.exists(fullpath):
                 try:
                     cur.execute(f"select * from pdfs where id='{id[0]}';")

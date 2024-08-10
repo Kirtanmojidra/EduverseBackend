@@ -129,13 +129,14 @@ def UploadPdf(app,cur,con):
                 print(e)
                 return Responce.send(402,{},"sem name is not valid")
             try:
+                file.save(pdfpath+filename)
                 datetoday = f'{date.today()}'
                 cur.execute(f"insert into pdfs values('{fileid}','{userObject['title']}','{userObject['sub']}','{userObject['sem']}','{userObject['userid']}','{datetoday}','{filename}');")
                 con.commit()
-                file.save(pdfpath+filename)
+                
             except Exception as e:
                 print(e)
-                return Responce.send(500,{},f"server Error:{e}")
+                return Responce.send(500,{},f"Error while uploading file")
             return Responce.send(200,{},"file uploaded")
         else:
             print(userObject)
