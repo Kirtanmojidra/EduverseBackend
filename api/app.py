@@ -108,7 +108,7 @@ def signup():
     if "gmail.com" in data['email']:
         otp = random.randint(100000, 999999)
         if Mail.send_mail(data['email'], "Eduverse", f"{otp}"):
-            userID = uuid.uuid4()
+            userID = str(uuid.uuid4())
             cookie = JWT.encode({"data": str(userID)})
             cur.execute("INSERT INTO otp (userid, otp) VALUES (%s, %s)", (userID, otp))
             cur.execute("INSERT INTO users (userid, username, password, fullname, email, status, verified) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
