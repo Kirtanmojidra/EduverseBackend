@@ -23,7 +23,7 @@ app.config["POSTGRESQL_DB"] = "verceldb"
 app.config["POSTGRESQL_PASSWORD"] = "2pVZitHFc5aY"
 
 rootdir = os.getcwd()
-pdfpath = os.path.join(rootdir, "api", "uploadpdf")
+pdfpath = os.path.join(rootdir, "api", "uploadpdf/")
 
 def connectDB():
     try:
