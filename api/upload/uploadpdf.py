@@ -6,7 +6,7 @@ from ..JWT import JWT
 from ..Responcehandler import Responce
 allowed_filenames = ['pdf']
 rootdir = os.getcwd()
-pdfpath = rootdir + "/api/uploadpdf/"
+pdfpath = os.path.join(rootdir, "api", "uploadpdf")
 sem1=["sem-1-syllabus",
     "DSC-C-BCA-111T",
     "DSC-M-BCA-113T",

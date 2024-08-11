@@ -12,7 +12,6 @@ import uuid
 from .Mail import Mail
 import random
 import psycopg2
-import subprocess
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -207,6 +206,47 @@ def bookmarks(pdfid):
             print(e)
             return Responce.send(500, {}, "Server Error")
     return Responce.send(401, {}, "Not Authenticated")
+
+@app.route("/api/v1/bookmarks", methods=["GET"])
+def getbookmarks():
+    cur.close()
+    con,cur = connectDB()
+    cookie = request.cookies.get("session")
+    if cookie:
+        try:
+            decoded_cookie = JWT.decode(cookie)
+        except Exception as e:
+            print(e)
+            return Responce.send(401,{},"invalid user")
+        try:
+            cur.execute(f"select * from bookmarks where userid='{decoded_cookie['data']}';")
+            r = cur.fetchall()
+            rows = []
+            for row in r:
+                rows.append(row[0])
+            pdf_ids = '\',\''.join(map(str,rows))
+            cur.execute(f"select * from pdfs inner join users on pdfs.userid = users.userid where id IN('{pdf_ids}')")
+            r = cur.fetchall()
+            pdf_obj = []
+            for i  in r:
+                obj = {
+                    "title":i[1],
+                    "subject":i[2],
+                    "sem": i[3],
+                    "date": i[5].strftime("%A-%d-%m-%y"),
+                    "path": i[6],
+                    'username':i[8]
+                }
+                pdf_obj.append(obj)
+            if r:
+                return Responce.send(200,pdf_obj,"Bookmarks List")
+            else:
+                return Responce.send(200,{},"No Bookmarks")
+        except Exception as e:
+            print(e)
+            return Responce.send(500,{},"server Error")
+    else:
+        return Responce.send(401,{},"Not Authenticated")
 
 @app.route("/api/v1/otp", methods=["POST"])
 def verify():
