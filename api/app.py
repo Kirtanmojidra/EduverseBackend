@@ -209,7 +209,6 @@ def bookmarks(pdfid):
 
 @app.route("/api/v1/bookmarks", methods=["GET"])
 def getbookmarks():
-    cur.close()
     con,cur = connectDB()
     cookie = request.cookies.get("session")
     if cookie:
