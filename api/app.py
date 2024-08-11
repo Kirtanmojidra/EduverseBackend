@@ -18,22 +18,36 @@ app = Flask(__name__)
 #updated code from 
 CORS(app,supports_credentials=True)
 app.config["FRONT_END_URL"] = ""
-app.config["MYSQL_HOST"] = "ep-aged-rain-a472d7qt-pooler.us-east-1.aws.neon.tech"
-app.config["MYSQL_USER"] = "default"
-app.config["MYSQL_DB"] = "verceldb"
-app.config["MYSQL_PASSWORD"] ="2pVZitHFc5aY"
+app.config["POSTGRESQL_HOST"] = "ep-aged-rain-a472d7qt-pooler.us-east-1.aws.neon.tech"
+app.config["POSTGRESQL_USER"] = "default"
+app.config["POSTGRESQL_DB"] = "verceldb"
+app.config["POSTGRESQL_PASSWORD"] ="2pVZitHFc5aY"
 #hwllo updated
 con = psycopg2.connect(
-    host = app.config["MYSQL_HOST"],
-    user = app.config["MYSQL_USER"],
-    password = app.config["MYSQL_PASSWORD"],
-    database = app.config["MYSQL_DB"],
+    host = app.config["POSTGRESQL_HOST"],
+    user = app.config["POSTGRESQL_USER"],
+    password = app.config["POSTGRESQL_PASSWORD"],
+    database = app.config["POSTGRESQL_DB"],
     )
 cur = con.cursor()
 rootdir = os.getcwd()
 pdfpath = rootdir + "/api/uploadpdf/"
+
+def connectDB():
+    try:
+        con = psycopg2.connect(
+        host = app.config["POSTGRESQL_HOST"],
+        user = app.config["POSTGRESQL_USER"],
+        password = app.config["POSTGRESQL_PASSWORD"],
+        database = app.config["POSTGRESQL_DB"],
+        )
+        cur = con.cursor()
+    except Exception as e:
+        print(e)
+        return Responce.send(500,{},"Error at server")
 @app.route("/api/v1/login",methods=["POST"])
 def login():
+    connectDB()
     try :
         data={}
         try:
@@ -122,6 +136,7 @@ def login():
 
 @app.route("/api/v1/signup",methods=["POST"])
 def signup():
+    connectDB()
     data = {}
     if request.data:
         try:
@@ -183,22 +198,27 @@ def signup():
 
 @app.route("/api/v1/upload",methods=["POST"])
 def upload():
+    connectDB()
     return uploadpdf.UploadPdf(app,cur,con)
 
 @app.route("/api/v1/getuser",methods=["GET","OPTION"])
 def getuser():
+    connectDB()
     return GetUser.process(cur)
 
 @app.route("/api/v1/logout",methods=["GET"])
 def logout():
+    connectDB()
     return LogOut.process()
 
 @app.route("/api/v1/getpdf",methods=["GET"])
 def getpdf():
+    connectDB()
     return GetPdf.process(cur)
 
 @app.route("/api/v1/pdf/<id>",methods=["GET"])
 def pdf(id):
+    connectDB()
     id = id.split('.')
     title = ""
     try:
@@ -219,6 +239,7 @@ def pdf(id):
 
 @app.route("/api/v1/deletepdf/<id>",methods=["GET"])
 def delpdf(id):
+    connectDB()
     if id =='':
         return Responce.send(404,{},"Not Valid Pdf")
     cookie = request.cookies.get("session")
@@ -271,6 +292,7 @@ def delpdf(id):
         return Responce.send(401,{},"Not Authenticated")
 @app.route("/api/v1/bookmark/<pdfid>", methods=["GET"])
 def bookmarks(pdfid):
+    connectDB()
     if pdfid == "":
         return Responce.send(422,{},"invalid pdfid")
     pdfid = pdfid.split(".")[0]
@@ -296,6 +318,7 @@ def bookmarks(pdfid):
 
 @app.route("/api/v1/bookmarks", methods=["GET"])
 def getbookmarks():
+    connectDB()
     cookie = request.cookies.get("session")
     if cookie:
         try:
@@ -335,6 +358,7 @@ def getbookmarks():
 
 @app.route("/api/v1/deletebookmark/<id>",methods=["GET"])
 def DeleteBookmark(id):
+    connectDB()
     try:
         id = id.split(".")[0]
         cookie = request.cookies.get("session")
@@ -363,6 +387,7 @@ def DeleteBookmark(id):
     
 @app.route("/api/v1/otp",methods=["POST"])
 def varify_otp():
+    connectDB()
     if request.data:
         data = json.loads(request.data)
         if data["otp"]:
