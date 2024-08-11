@@ -248,6 +248,36 @@ def getbookmarks():
     else:
         return Responce.send(401,{},"Not Authenticated")
 
+@app.route("/api/v1/deletebookmark/<id>",methods=["GET"])
+def DeleteBookmark(id):
+    con,cur = connectDB()
+    try:
+        id = id.split(".")[0]
+        cookie = request.cookies.get("session")
+        if cookie:
+            try:
+                decoded_cookie = JWT.decode(cookie)
+            except Exception as e:
+                print(e)
+                return Responce.send(401,{},"invalid user")
+            print(f"delete from bookmarks where pdf_id='{id}' and userid='{decoded_cookie['data']}';")
+            try:
+                cur.execute(f"select * from bookmarks where pdf_id='{id}' and userid='{decoded_cookie['data']}';")
+                r = cur.fetchone()
+                if r :
+                    cur.execute(f"delete from bookmarks where pdf_id='{id}' and userid='{decoded_cookie['data']}';")
+                    con.commit()
+                    return Responce.send(200,{},"Removed Bookmaked")
+                else:
+                    return Responce.send(200,{},"not bookmarked")
+            except Exception as e:
+                print(e)
+                return Responce.send(500,{},"Server Error")
+    except Exception as e:
+        print(e)
+        return Responce.send(500,{},"invalid pdf name ")
+    
+
 @app.route("/api/v1/otp", methods=["POST"])
 def verify():
     con, cur = connectDB()
