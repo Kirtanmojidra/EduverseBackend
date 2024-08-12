@@ -61,9 +61,10 @@ def UploadPdf(app, cur, con):
 
     try:
         semester = int(semester)
-        if semester not in semesters or subject not in semesters[int(semester)]:
+        if semester not in semesters or subject not in semesters[semester]:
             return Responce.send(402, {}, "Invalid subject for the given semester")
-    except ValueError:
+    except ValueError as e:
+        print(e)
         return Responce.send(402, {}, "Invalid semester format")
 
     # Save file and update database
