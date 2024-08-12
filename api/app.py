@@ -102,11 +102,11 @@ def signup():
     cur.execute("SELECT * FROM users WHERE username=%s OR email=%s", (data['username'], data['email']))
     row = cur.fetchone()
     if row:
-        if row[6] == "pending":
-            if row[3] == data['email']:
-                pass
-            else:
+        if row[-1] == "pending":
+            if row[4] != data['email']:
                 return Responce.send(409, {}, "Username or email already used")    
+            else:
+                pass
         else :
             return Responce.send(409, {}, "Username or email already used")
     
