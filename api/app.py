@@ -106,7 +106,9 @@ def signup():
             if row[4] != data['email']:
                 return Responce.send(409, {}, "Username or email already used")    
             else:
-                pass
+                cur.execute('DELETE FROM users where userID =%s',row[0])
+                cur.execute("DELETE FROM otp where userid =%s",(row[0],))
+                con.commit()
         else :
             return Responce.send(409, {}, "Username or email already used")
     
@@ -115,9 +117,6 @@ def signup():
         if Mail.send_mail(data['email'], "Eduverse", f"{otp}"):
             userID = str(uuid.uuid4())
             cookie = JWT.encode({"data": str(userID)})
-            cur.execute('DELETE FROM users where userID =%s',row[0])
-            cur.execute("DELETE FROM otp where userid =%s",(row[0],))
-            con.commit()
             cur.execute("INSERT INTO otp (userid, otp) VALUES (%s, %s)", (userID, otp))
             cur.execute("INSERT INTO users (userid, username, password, fullname, email, isadmin,status ) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
                         (userID, data['username'], data['password'], data['fullname'], data['email']))
