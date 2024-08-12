@@ -102,7 +102,13 @@ def signup():
     cur.execute("SELECT * FROM users WHERE username=%s OR email=%s", (data['username'], data['email']))
     row = cur.fetchone()
     if row:
-        return Responce.send(409, {}, "Username or email already used")
+        if row[6] == "pending":
+            if row[3] == data['email']:
+                pass
+            else:
+                return Responce.send(409, {}, "Username or email already used")    
+        else :
+            return Responce.send(409, {}, "Username or email already used")
     
     if "gmail.com" in data['email']:
         otp = random.randint(100000, 999999)
