@@ -25,7 +25,6 @@ semesters = {
 }
 
 def UploadPdf(app, cur, con):
-    # Authentication
     cookie = request.cookies.get("session")
     if not cookie:
         return Responce.send(401, {}, "Not Authenticated")
@@ -76,7 +75,9 @@ def UploadPdf(app, cur, con):
         print("----------------------------- 1 ---------------------")
         cur.execute(f"insert into pdfs values('{file_id}','{title}','{subject}','{semester}','{user_id}','{datetoday}','{filename}');")
         con.commit()
+        cur.close()
         return Responce.send(200, {}, "File uploaded successfully")
     except Exception as e:
         print(e)
         return Responce.send(500, {}, "Error while uploading file")
+    

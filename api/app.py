@@ -132,7 +132,6 @@ def getuser():
 
 @app.route("/api/v1/logout", methods=["GET"])
 def logout():
-    con, cur = connectDB()
     return LogOut.process()
 
 @app.route("/api/v1/getpdf", methods=["GET"])
