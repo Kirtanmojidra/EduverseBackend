@@ -2,8 +2,6 @@ from flask  import request,jsonify
 import uuid
 import os
 import datetime
-from ..JWT import JWT
-from ..app import connectDB
 from ..Responcehandler import Responce
 allowed_filenames = ['pdf']
 rootdir = os.getcwd()
@@ -60,8 +58,6 @@ sem6=[ "sem-6-syllabus",
     "CC-309-oldpaper",
     "SEC-302 (C)-oldpaper"]
 def UploadPdf(app,cur,con):
-    con, cur = connectDB()
-    
     if 'file' not in request.files:
         return Responce.send(400, {}, "No file part in the request")
     
