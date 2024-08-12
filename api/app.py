@@ -115,7 +115,9 @@ def signup():
         if Mail.send_mail(data['email'], "Eduverse", f"{otp}"):
             userID = str(uuid.uuid4())
             cookie = JWT.encode({"data": str(userID)})
+            cur.execute('DELETE FROM users where userID =%s',row[0])
             cur.execute("DELETE FROM otp where userid =%s",(userID,))
+            con.commit()
             cur.execute("INSERT INTO otp (userid, otp) VALUES (%s, %s)", (userID, otp))
             cur.execute("INSERT INTO users (userid, username, password, fullname, email, isadmin,status ) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
                         (userID, data['username'], data['password'], data['fullname'], data['email']))
