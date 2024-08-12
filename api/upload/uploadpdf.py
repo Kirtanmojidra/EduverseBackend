@@ -72,10 +72,7 @@ def UploadPdf(app, cur, con):
     try:
         file.save(os.path.join(pdfpath, filename))
         datetoday = date.today().isoformat()
-        cur.execute(
-            "INSERT INTO pdfs (id, title, subject, semester, user_id, upload_date, filename) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (file_id, title, subject, semester, user_id, datetoday, filename)
-        )
+        cur.execute(f"insert into pdfs values('{file_id}','{title}','{subject}','{semester}','{user_id}','{datetoday}','{filename}');")
         con.commit()
         return Responce.send(200, {}, "File uploaded successfully")
     except Exception as e:
