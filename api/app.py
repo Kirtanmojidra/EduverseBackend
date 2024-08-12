@@ -110,7 +110,7 @@ def signup():
             userID = str(uuid.uuid4())
             cookie = JWT.encode({"data": str(userID)})
             cur.execute("INSERT INTO otp (userid, otp) VALUES (%s, %s)", (userID, otp))
-            cur.execute("INSERT INTO users (userid, username, password, fullname, email, status, verified) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
+            cur.execute("INSERT INTO users (userid, username, password, fullname, email, isadmin,status ) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
                         (userID, data['username'], data['password'], data['fullname'], data['email']))
             con.commit()
             res = make_response(jsonify({"message": "OTP sent to email", "status_code": 200}))
