@@ -1,8 +1,9 @@
 from flask  import request,jsonify
 import uuid
 import os
-from datetime import date
+import datetime
 from ..JWT import JWT
+from ..app import connectDB
 from ..Responcehandler import Responce
 allowed_filenames = ['pdf']
 rootdir = os.getcwd()
@@ -59,88 +60,64 @@ sem6=[ "sem-6-syllabus",
     "CC-309-oldpaper",
     "SEC-302 (C)-oldpaper"]
 def UploadPdf(app,cur,con):
-    try:
-        cookie = request.cookies.get("session")
-        if cookie:
-            decoded_cookie = JWT.decode(cookie)
-            if decoded_cookie:
-                pass
-        else:
-            return Responce(401,{},"Not Authenticated--")
-    except:
-        return Responce.send(401,{},"not authenticated ---")
-    userObject={}
-    if 'pdf' not in request.files:
-        return jsonify({'message': 'Not selected pdf'}), 400
-
-    file = request.files['pdf']
-    file_ext = file.filename.split('.')
-    file_ext = file_ext[-1]
+    con, cur = connectDB()
+    
+    if 'file' not in request.files:
+        return Responce.send(400, {}, "No file part in the request")
+    
+    file = request.files['file']
     if file.filename == '':
-        return jsonify({'message': 'Not selected pdf'}), 400
-    if file_ext not in allowed_filenames:
-        return Responce.send(402,{},"file type is not valid")
-    fileid = uuid.uuid4()
-    filename = f"{fileid}.pdf"
+        return Responce.send(400, {}, "No selected file")
+    
+    if not allowed_file(file.filename):
+        return Responce.send(400, {}, "Invalid file type")
+    
+    title = request.form.get('title')
+    subject = request.form.get('subject')
+    sem = request.form.get('sem')
+    if not title or not subject or not sem:
+        return Responce.send(400, {}, "Missing required form data: title, subject, or sem")
+    if sem == '1':
+        if subject not in sem1:
+            return Responce.send(400, {}, "Subject is not valid for sem 1")
+    if sem == '2':
+        if subject not in sem2:
+            return Responce.send(400, {}, "Subject is not valid for sem 2")
+    if sem == '3':
+        if subject not in sem3:
+            return Responce.send(400, {}, "Subject is not valid for sem 3")
+    if sem == '4':
+        if subject not in sem4:
+            return Responce.send(400, {}, "Subject is not valid for sem 4")
+    if sem == '5':
+        if subject not in sem5:
+            return Responce.send(400, {}, "Subject is not valid for sem 5")
+    if sem ==  '6':
+        if subject not in sem6:
+            return Responce.send(400, {}, "Subject is not valid for sem 6")
+    if sem > '7':
+        return Responce.send(400, {}, "Invalid sem number")
     try:
-        userObject["title"] = request.form.get("title")
-        userObject["sub"] = request.form.get("subject")
-        userObject["sem"] = request.form.get("sem")
-        userObject["userid"] = decoded_cookie["data"]
+        pdf_id = str(uuid.uuid4())
+        filename = pdf_id + ".pdf"
+        file_path = os.path.join(pdfpath, filename)
+        
+        cur.execute("SELECT * FROM pdfs WHERE pdf_path=%s;", (filename,))
+        if cur.fetchone():
+            return Responce.send(409, {}, "PDF already exists")
+        
+        file.save(file_path)
+        
+        cur.execute(
+            "INSERT INTO pdfs (id, pdf_path, title, subject, sem, date) VALUES (%s, %s, %s, %s, %s, %s);",
+            (pdf_id, filename, title, subject, sem, datetime.now())
+        )
+        con.commit()
+        return Responce.send(200, {}, "File uploaded successfully")
+    except Exception as e:
+        print(e)
+        return Responce.send(500, {}, "Server error while uploading file")
 
-        if(userObject["title"] is not None
-           and userObject["sub"] is not None
-           and userObject["sem"] is not None
-           and userObject["userid"] is not None):
-            try:
-                if userObject["sem"]== 1:
-                    if userObject["sub"] in sem1:
-                        pass
-                    else:
-                        return Responce.send(402,{},"subject is not valid")
-                elif userObject["sem"]== 2:
-                    if userObject["sub"] in sem2:
-                        pass
-                    else:
-                        return Responce.send(402,{},"subject is not valid")
-                elif userObject["sem"]== 3:
-                    if userObject["sub"] in sem3:
-                        pass
-                    else:
-                        return Responce.send(402,{},"subject is not valid")
-                elif userObject["sem"]== 4:
-                    if userObject["sub"] in sem4:
-                        pass
-                    else:
-                        return Responce.send(402,{},"subject is not valid")
-                elif userObject["sem"]== 5:
-                    if userObject["sub"] in sem5:
-                        pass
-                    else:
-                        return Responce.send(402,{},"subject is not valid")
-                elif userObject["sem"]== 6:
-                    if userObject["sub"] in sem6:
-                        pass
-                    else:
-                        return Responce.send(402,{},"subject is not valid")
-                elif int(userObject["sem"]) > 6:
-                    return Responce.send(402,{},"subject name is not valid")
-            except Exception as e:
-                print(e)
-                return Responce.send(402,{},"sem name is not valid")
-            try:
-                file.save(pdfpath+filename)
-                datetoday = f'{date.today()}'
-                cur.execute(f"insert into pdfs values('{fileid}','{userObject['title']}','{userObject['sub']}','{userObject['sem']}','{userObject['userid']}','{datetoday}','{filename}');")
-                con.commit()
-                
-            except Exception as e:
-                print(e)
-                return Responce.send(500,{},f"Error while uploading file")
-            return Responce.send(200,{},"file uploaded")
-        else:
-            print(userObject)
-            return Responce.send(401,{},"parameter missing")
-    except:
-        print(userObject)
-        return Responce.send(401,{},"parameter missing")
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'pdf'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

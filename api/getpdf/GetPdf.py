@@ -53,7 +53,6 @@ def process(cur):
 
         if not rows:
             return Responce.send(401, {}, "PDF not found with this data")
-
         cur.execute("SELECT pdf_id FROM bookmarks WHERE userid=%s", (userid,))
         bookmarks = {row[0] for row in cur.fetchall()}
 
@@ -70,7 +69,6 @@ def process(cur):
                 "isBookmarked": "true" if pdf_id in bookmarks else "false"
             }
             pdfs.append(pdf)
-
         return Responce.send(200, pdfs, "success")
 
     except Exception as e:
