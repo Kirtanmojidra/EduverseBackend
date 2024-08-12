@@ -116,7 +116,7 @@ def signup():
             userID = str(uuid.uuid4())
             cookie = JWT.encode({"data": str(userID)})
             cur.execute('DELETE FROM users where userID =%s',row[0])
-            cur.execute("DELETE FROM otp where userid =%s",(userID,))
+            cur.execute("DELETE FROM otp where userid =%s",(row[0],))
             con.commit()
             cur.execute("INSERT INTO otp (userid, otp) VALUES (%s, %s)", (userID, otp))
             cur.execute("INSERT INTO users (userid, username, password, fullname, email, isadmin,status ) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
