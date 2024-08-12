@@ -61,7 +61,7 @@ def UploadPdf(app, cur, con):
 
     try:
         semester = int(semester)
-        if semester not in semesters or subject not in semesters[semester]:
+        if semester not in semesters or subject not in semesters[int(semester)]:
             return Responce.send(402, {}, "Invalid subject for the given semester")
     except ValueError:
         return Responce.send(402, {}, "Invalid semester format")
