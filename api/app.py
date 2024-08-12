@@ -284,33 +284,32 @@ def DeleteBookmark(id):
         return Responce.send(500,{},"invalid pdf name ")
     
 
-@app.route("/api/v1/otp", methods=["POST"])
-def verify():
-    con, cur = connectDB()
-    data = json.loads(request.data.decode("utf-8"))
-    otp = data.get('otp')
-    cookie = request.cookies.get("session")
-    
-    if not otp:
-        return Responce.send(405, {}, "Otp is missing")
-    
-    if cookie:
-        try:
-            decoded_cookie = JWT.decode(cookie)
-            cur.execute("SELECT * FROM otp WHERE userid=%s AND otp=%s", (decoded_cookie['data'], otp))
-            row = cur.fetchone()
-            if row:
-                cur.execute("UPDATE users SET status='true', verified='true' WHERE userid=%s", (decoded_cookie['data'],))
-                cur.execute("DELETE FROM otp WHERE userid=%s", (decoded_cookie['data'],))
-                con.commit()
-                res = make_response(jsonify({"message": "Verification Successful", "status_code": 200}))
-                res.set_cookie("session", cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
-                return res
-            return Responce.send(404, {}, "Invalid OTP")
-        except Exception as e:
-            print(e)
-            return Responce.send(500, {}, "Server Error")
-    return Responce.send(401, {}, "Not Authenticated")
-
+@app.route("/api/v1/otp",methods=["POST"])
+def varify_otp():
+    con,cur = connectDB()
+    if request.data:
+        data = json.loads(request.data)
+        if data["otp"]:
+            otp = data["otp"]
+            if request.cookies.get("session"):
+                decoded_cookie = JWT.decode(request.cookies["session"])
+                cur.execute(f"select * from otp where userid='{decoded_cookie['data']}';")
+                row = cur.fetchone()
+                if row:
+                    if row[1] == otp:
+                        try:
+                            cur.execute(f"delete from otp where userid='{decoded_cookie['data']}';")
+                            cur.execute(f"update users set status='{'validated'}' where userid='{row[0]}';")
+                            con.commit()
+                            return Responce.send(200,{},"OTP Verified")
+                        except Exception as e:
+                            print(e)
+                            return Responce.send(500,{},"Server Error")
+                    else:
+                        return Responce.send(401,{},"Invalid OTP")
+                else:
+                    return Responce.send(401,{},"Try Again")
+    else:
+        return Responce.send(401,{},"requied filed not found")
 if __name__ == "__main__":
     app.run(debug=True)
