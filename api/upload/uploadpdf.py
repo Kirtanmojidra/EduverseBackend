@@ -16,7 +16,8 @@ semesters = {
     2: ["DSC-C-BCA-121 T", "SEC-BCA-126", "IDC-BCA-124 T", "DSC-M-BCA-123 T", "DSC-M-BCA-123 P", "DSC-C-BCA-122 P",
         "IDC-BCA-124 P", "DSC-C-BCA-121 T-old-paper", "SEC-BCA-126-old-T-old-paper", "IDC-BCA-124 T-old-paper", 
         "DSC-M-BCA-123 T-old-paper"],
-    3: [],
+    3: ["sem-3-syllabus","DSC-C-BCA-231T","DSC-C-BCA-232T","DSC-C-BCA-233T","IDC-BCA-234T","IDC-BCA-235P","SEC-237"
+        ,"IDC-BCA-234T-old-paper","DSC-C-BCA-231T-old-paper","DSC-C-BCA-232T-old-paper"],
     4: [],
     5: ["sem-5-syllabus", "cc-301", "cc-302", "cc-303", "sec-301", "cc-304", "cc-305", 
         "cc-301-old-paper", "cc-302-old-paper", "cc-303-old-paper", "sec-301-c-old-paper"],
