@@ -106,7 +106,7 @@ def signup():
             if row[4] != data['email']:
                 return Responce.send(409, {}, "Username or email already used")    
             else:
-                cur.execute('DELETE FROM users where userID =%s',(row[0]))
+                cur.execute(f"DELETE FROM users where userID ='{row[0]}';")
                 cur.execute("DELETE FROM otp where userid =%s",(row[0],))
                 con.commit()
         else :
