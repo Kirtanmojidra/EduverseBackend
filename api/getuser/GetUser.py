@@ -11,6 +11,8 @@ def process(cur):
             cur.execute(f"select * from users where userid='{decoded_cookie['data']}';")
             row = cur.fetchone()
             if row:
+                if row[-1] == "pending":
+                    return Responce.send(401,{},"User is not verified")
                 return Responce.send(200,{"username":row[1],"fullname":row[3],"isadmin":row[5]},"")
             else:
                 return Responce.send(401,{},"invalid user data")

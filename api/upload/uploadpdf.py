@@ -37,7 +37,15 @@ def UploadPdf(app, cur, con):
     except Exception as e:
         print(e)
         return Responce.send(401, {}, "Not Authenticated")
-
+    try:
+        cur.execute(f"select * from users where userid='{decoded_cookie['data']}';")
+        row = cur.fetchone()
+        if row:
+            if row[-1] == "pending":
+                return Responce.send(401,{},"Users not allowed to upload pdfs")
+    except Exception as e:
+            print(f"Fetching Error: {e}")
+            return Responce.send(500,{},f"server in truble {e}")
     # Validate file
     if 'pdf' not in request.files:
         return jsonify({'message': 'No file part in the request'}), 400

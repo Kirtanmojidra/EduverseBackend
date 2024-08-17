@@ -3,7 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-def send_mail(to, subject, body):
+def send_mail(to, subject, body,password):
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
     smtp_username = "eduverse2401@gmail.com"
