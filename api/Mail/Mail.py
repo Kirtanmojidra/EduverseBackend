@@ -21,8 +21,8 @@ def send_mail(to, subject, body,password,username):
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6;">
 
-    <h1 style="color: #4CAF50; text-align: center;">🎉 Welcome to Eduverse, {username}! 🌟</h1>
-    <h1>Use this otp to login : <span style="color:#0000FF">{body}</span></h2>
+    <h2 style="color: #4CAF50; text-align: center;">🎉 Welcome to Eduverse, {username}! 🌟</h2>
+    <h3 style="color: #00008B">Use this otp to login : <span style="color:#0000FF">{body}</span></h3>
 
     <p>Dear <strong>{username}</strong>,</p>
 
