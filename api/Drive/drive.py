@@ -5,7 +5,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-creds_path = os.path.join(os.getcwd(),r'api\\Drive\\')
+creds_path = os.path.join(os.getcwd(),r'api/Drive/')
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
