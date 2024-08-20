@@ -1,15 +1,13 @@
 from flask import request
 from ..JWT import JWT
-from ..Responcehandler import Responce
+from Responcehandler import Responce
 
 def process(cur):
     if not request.args.get("subject") or not request.args.get("sem"):
         return Responce.send(401, {}, "parameter missing")
-
     subject = request.args.get("subject")
     sem = request.args.get("sem")
     userid = ''
-
     try:
         cookie = request.cookies.get("session")
         print(f"Cookie: {cookie}")

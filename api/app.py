@@ -2,6 +2,7 @@ import shlex
 from flask import Flask, request, make_response, send_file, jsonify
 import os
 from .JWT import JWT
+from .Drive import drive
 from .logout import LogOut
 from .getuser import GetUser
 from .upload import uploadpdf
@@ -63,8 +64,8 @@ def login():
         
         if not username or not password:
             return Responce.send(401, {}, "Username or password is missing")
-        
-        cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
+        print(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
+        cur.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
         row = cur.fetchone()
         if row:
             if row[-1] == "pending":
@@ -150,13 +151,19 @@ def getpdf():
 @app.route("/api/v1/pdf/<id>", methods=["GET"])
 def pdf(id):
     con, cur = connectDB()
-    id = id.split('.')
-    if len(id) == 2 and id[1] == 'pdf':
-        fullpath = os.path.join(pdfpath, f"{id[0]}.pdf")
-        if os.path.exists(fullpath):
-            cur.execute("SELECT * FROM pdfs WHERE id=%s", (id[0],))
-            row = cur.fetchone()
-            return send_file(fullpath, as_attachment=True, download_name=f"{row[1]}-EduVerse.pdf")
+    try:
+        print(f"SELECT * FROM pdfs WHERE pdf_path='{id}';")
+        cur.execute(f"SELECT * FROM pdfs WHERE pdf_path='{id}';")
+        row = cur.fetchone()
+    except Exception as e:
+        print(e)
+        return Responce.send(500, {}, "Server error")
+    if row:
+        if "https://drive.google.com/file/d/" in row[0]:
+            return Responce.send(200,{"path":f"{row[0]}"},"here is your file")
+        else:
+            return Responce.send(200,{"path":f"https://drive.google.com/file/d/{row[0]}/view"},"here is your file")
+    else:
         return Responce.send(404, {}, "File not found")
     return Responce.send(401, {}, "Invalid file name")
 
@@ -165,28 +172,24 @@ def delpdf(id):
     con, cur = connectDB()
     if not id:
         return Responce.send(404, {}, "Not valid PDF")
-    
     cookie = request.cookies.get("session")
-    id = id.split(".")[0]
     if cookie:
         try:
             decoded_cookie = JWT.decode(cookie)
             cur.execute("SELECT * FROM users WHERE userid=%s", (decoded_cookie['data'],))
             row = cur.fetchone()
             if row:
-                cur.execute("SELECT * FROM pdfs WHERE userid=%s AND id=%s", (decoded_cookie['data'], id))
+                cur.execute("SELECT * FROM pdfs WHERE userid=%s AND pdf_path=%s", (decoded_cookie['data'], id))
                 row2 = cur.fetchone()
-                if row2 or row[5] == 1:
-                    fullpath = os.path.join(pdfpath, f"{id}.pdf")
-                    if os.path.exists(fullpath):
+                if row2 or row[5] == "true":
+                    if drive.delete(row2[0]):
                         cur.execute("DELETE FROM bookmarks WHERE pdf_id=%s", (id,))
-                        cur.execute("DELETE FROM pdfs WHERE id=%s", (id,))
+                        cur.execute("DELETE FROM pdfs WHERE pdf_path=%s", (id,))
                         con.commit()
-                        os.remove(fullpath)
                         return Responce.send(200, {}, "Deleted Successfully")
                     return Responce.send(404, {}, "File not found")
-                return Responce.send(401, {}, "Invalid Cookie")
-            return Responce.send(401, {}, "Invalid Cookie")
+                return Responce.send(401, {}, "User not permitted to delete")
+            return Responce.send(401, {}, "User is not authorized")
         except Exception as e:
             print(e)
             return Responce.send(500, {}, "Server Error")
@@ -231,7 +234,8 @@ def getbookmarks():
             for row in r:
                 rows.append(row[0])
             pdf_ids = '\',\''.join(map(str,rows))
-            cur.execute(f"select * from pdfs inner join users on pdfs.userid = users.userid where id IN('{pdf_ids}')")
+            print(f"select * from pdfs inner join users on pdfs.userid = users.userid where pdf_path IN('{pdf_ids}');")
+            cur.execute(f"select * from pdfs inner join users on pdfs.userid = users.userid where pdf_path IN('{pdf_ids}');")
             r = cur.fetchall()
             pdf_obj = []
             for i  in r:
@@ -258,7 +262,6 @@ def getbookmarks():
 def DeleteBookmark(id):
     con,cur = connectDB()
     try:
-        id = id.split(".")[0]
         cookie = request.cookies.get("session")
         if cookie:
             try:
@@ -311,5 +314,91 @@ def varify_otp():
                     return Responce.send(401,{},"Try Again")
     else:
         return Responce.send(401,{},"requied filed not found")
+    
+@app.route("/api/v1/usercount", methods=["GET"])
+def userCount():
+    con,cur = connectDB()
+    try:
+        cur.execute("select COUNT(userid) from users;")
+        row = cur.fetchone()
+        if row:
+            print(row)
+            return Responce.send(200,{"user_count":row[0]},"User count")
+        else:
+            return Responce.send(500,{},"failed to count")
+    except Exception as e:
+        print(e)
+        return Responce.send(500,{},"failed to count")
+    
+@app.route("/api/v1/allpdf", methods=["GET"])
+def allPDF():
+    con,cur = connectDB()
+
+    userid = ''
+    try:
+        cookie = request.cookies.get("session")
+        print(f"Cookie: {cookie}")
+
+        if cookie:
+            try:
+                decoded_cookie = JWT.decode(cookie)
+                userid = decoded_cookie.get('data', '')
+            except Exception as e:
+                print(f"Error decoding cookie: {e}")
+
+            if userid:
+                try:
+                    cur.execute("SELECT * FROM users WHERE userid=%s", (userid,))
+                    row = cur.fetchone()
+
+                    if row and row[0] == userid:
+                        print("User ID:", userid)
+                    else:
+                        print("Error in decoding cookie")
+                except Exception as e:
+                    print(f"Error querying user: {e}")
+                    return Responce.send(500, {}, "Server error")
+            else:
+                pass
+        else:
+            pass
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return Responce.send(500, {}, "Server error")
+
+    try:
+        cur.execute("""
+            SELECT username, title, sub, sem, pdf_path, upload_date
+            FROM pdfs
+            INNER JOIN users ON pdfs.userid=users.userid
+        """)
+        rows = cur.fetchall()
+
+        if not rows:
+            return Responce.send(401, {}, "PDF not found with this data")
+        if userid:
+            cur.execute("SELECT pdf_id FROM bookmarks WHERE userid=%s", (userid,))
+            bookmarks = {row[0] for row in cur.fetchall()}
+
+        pdfs = []
+        for row in rows:
+            pdf_id = row[4].split(".")[0]
+            pdf = {
+                "username": row[0],
+                "title": row[1],
+                "subject": row[2],
+                "Sem": row[3],
+                "path": row[4],
+                "date": row[5].strftime("%A-%d-%m-%y"),
+                "isBookmarked": "true" if pdf_id in bookmarks else "false"
+            }
+            pdfs.append(pdf)
+        return Responce.send(200, pdfs, "success")
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return Responce.send(500, {}, "Server trouble")
+
 if __name__ == "__main__":
     app.run(debug=True)

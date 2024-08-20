@@ -4,10 +4,11 @@ import os
 from datetime import date
 from ..JWT import JWT
 from ..Responcehandler import Responce
-
+from ..Drive import drive
 allowed_filenames = ['pdf']
 rootdir = os.getcwd()
-pdfpath = os.path.join(rootdir, "api", "uploadpdf/")
+pdfpath = os.path.join(rootdir,'api',"uploadpdf/")
+
 
 semesters = {
     1: ["sem-1-syllabus", "DSC-C-BCA-111T", "DSC-M-BCA-113T", "MDC-BCA-114 T", "SEC-OOS-116", "VAC-117", 
@@ -77,12 +78,22 @@ def UploadPdf(app, cur, con):
 
     # Save file and update database
     file_id = str(uuid.uuid4())
-    filename = f"{file_id}.pdf"
+    fullpath = pdfpath+f"{file_id}"
     try:
-        file.save(os.path.join(pdfpath, filename))
+        file.save(fullpath)
+        print("file saved locally")
         datetoday = date.today().isoformat()
-        print("----------------------------- 1 ---------------------")
-        cur.execute(f"insert into pdfs values('{file_id}','{title}','{subject}','{semester}','{user_id}','{datetoday}','{filename}');")
+        try:
+            drive_pdf_id = drive.upload(fullpath, title+"-eduverse-io.vercel.app.pdf")
+            if drive_pdf_id :
+                os.remove(fullpath)
+            else:
+                os.remove(fullpath)
+                return Responce.send(402, {}, "Error uploading file")
+        except Exception as e:
+            print(e)
+            Responce.send(402, {}, "Error uploading file")
+        cur.execute(f"insert into pdfs values('{drive_pdf_id}','{title}','{subject}','{semester}','{user_id}','{datetoday}','{file_id}');")
         con.commit()
         cur.close()
         return Responce.send(200, {}, "File uploaded successfully")
