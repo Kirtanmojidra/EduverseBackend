@@ -181,7 +181,7 @@ def delpdf(id):
             if row:
                 cur.execute("SELECT * FROM pdfs WHERE userid=%s AND pdf_path=%s", (decoded_cookie['data'], id))
                 row2 = cur.fetchone()
-                if row2 or row[5] == "true":
+                if row2 or row[5]:
                     if drive.delete(row2[0]):
                         cur.execute("DELETE FROM bookmarks WHERE pdf_id=%s", (id,))
                         cur.execute("DELETE FROM pdfs WHERE pdf_path=%s", (id,))
