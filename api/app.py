@@ -179,17 +179,20 @@ def delpdf(id):
             cur.execute("SELECT * FROM users WHERE userid=%s", (decoded_cookie['data'],))
             row = cur.fetchone()
             if row:
-                cur.execute("SELECT * FROM pdfs WHERE userid=%s AND pdf_path=%s", (decoded_cookie['data'], id))
+                cur.execute("SELECT * FROM pdfs WHERE pdf_path=%s",  (id,))
                 row2 = cur.fetchone()
-                if row2 or row[5]:
+                if row2[4] == decoded_cookie["data"] or row[5]:
                     if drive.delete(row2[0]):
                         cur.execute("DELETE FROM bookmarks WHERE pdf_id=%s", (id,))
                         cur.execute("DELETE FROM pdfs WHERE pdf_path=%s", (id,))
                         con.commit()
                         return Responce.send(200, {}, "Deleted Successfully")
-                    return Responce.send(404, {}, "File not found")
-                return Responce.send(401, {}, "User not permitted to delete")
-            return Responce.send(401, {}, "User is not authorized")
+                    else:
+                        return Responce.send(404, {}, "File not found")
+                else:
+                    return Responce.send(401, {}, "User not permitted to delete")
+            else:
+                return Responce.send(401, {}, "User is not authorized")
         except Exception as e:
             print(e)
             return Responce.send(500, {}, "Server Error")
