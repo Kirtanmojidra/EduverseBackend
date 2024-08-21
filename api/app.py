@@ -335,6 +335,7 @@ def allPDF():
     con,cur = connectDB()
 
     userid = ''
+    bookmarks = []
     try:
         cookie = request.cookies.get("session")
         print(f"Cookie: {cookie}")
@@ -379,11 +380,7 @@ def allPDF():
             return Responce.send(401, {}, "PDF not found with this data")
         if userid:
             cur.execute("SELECT pdf_id FROM bookmarks WHERE userid=%s", (userid,))
-            bookmarks = {row[0] for row in cur.fetchall()}
-            if bookmarks:
-                pass
-            else:
-                bookmarks = []
+            bookmarks = [{row[0] for row in cur.fetchall()}]
         pdfs = []
         for row in rows:
             pdf_id = row[4].split(".")[0]
