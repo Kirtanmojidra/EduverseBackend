@@ -380,7 +380,10 @@ def allPDF():
         if userid:
             cur.execute("SELECT pdf_id FROM bookmarks WHERE userid=%s", (userid,))
             bookmarks = {row[0] for row in cur.fetchall()}
-
+            if bookmarks:
+                pass
+            else:
+                bookmarks = []
         pdfs = []
         for row in rows:
             pdf_id = row[4].split(".")[0]
