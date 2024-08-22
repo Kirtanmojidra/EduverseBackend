@@ -65,6 +65,7 @@ def login():
         if not username or not password:
             return Responce.send(401, {}, "Username or password is missing")
         print(f"Login : {username} :  {password}")
+        print(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
         cur.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
         row = cur.fetchone()
         if row:
