@@ -99,7 +99,7 @@ def signup():
         return Responce.send(401, {}, "Full name is too short")
     if len(data['email']) < 8:
         return Responce.send(401, {}, "Email is too short")
-    print(f"Sign  Up: {data["username"]} : {data["password"]} : {data["email"]} : {data["fullname"]} ")
+    print(f"Sign  Up: {data['username']} {data['password']} {data['email']}")
     cur.execute("SELECT * FROM users WHERE username=%s OR email=%s", (data['username'], data['email']))
     row = cur.fetchone()
     if row:
