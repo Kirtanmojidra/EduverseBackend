@@ -64,7 +64,7 @@ def login():
         
         if not username or not password:
             return Responce.send(401, {}, "Username or password is missing")
-        print(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
+        print(f"Login : {username} :  {password}")
         cur.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
         row = cur.fetchone()
         if row:
@@ -99,7 +99,7 @@ def signup():
         return Responce.send(401, {}, "Full name is too short")
     if len(data['email']) < 8:
         return Responce.send(401, {}, "Email is too short")
-
+    print(f"Sign  Up: {data["username"]} : {data["password"]} : {data["email"]} : {data["fullname"]} ")
     cur.execute("SELECT * FROM users WHERE username=%s OR email=%s", (data['username'], data['email']))
     row = cur.fetchone()
     if row:
@@ -115,19 +115,22 @@ def signup():
     
     if "gmail.com" in data['email']:
         otp = random.randint(100000, 999999)
-        if Mail.send_mail(data['email'], "Eduverse", f"{otp}",data["password"],data["username"]):
-            userID = str(uuid.uuid4())
-            cookie = JWT.encode({"data": str(userID)})
-            cur.execute("INSERT INTO otp (userid, otp) VALUES (%s, %s)", (userID, otp))
-            cur.execute("INSERT INTO users (userid, username, password, fullname, email, isadmin,status ) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
-                        (userID, data['username'], data['password'], data['fullname'], data['email']))
-            con.commit()
-            res = make_response(jsonify({"message": "OTP sent to email", "status_code": 200}))
-            res.set_cookie("session", cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
-            return res
+        try:
+            if Mail.send_mail(data['email'], "Eduverse", f"{otp}",data["password"],data["username"]):
+                userID = str(uuid.uuid4())
+                cookie = JWT.encode({"data": str(userID)})
+                cur.execute("INSERT INTO otp (userid, otp) VALUES (%s, %s)", (userID, otp))
+                cur.execute("INSERT INTO users (userid, username, password, fullname, email, isadmin,status ) VALUES (%s, %s, %s, %s, %s, 'false', 'pending')",
+                            (userID, data['username'], data['password'], data['fullname'], data['email']))
+                con.commit()
+                res = make_response(jsonify({"message": "OTP sent to email", "status_code": 200}))
+                res.set_cookie("session", cookie, path='/', max_age=60*60*48, samesite='None', secure=True)
+                return res
+        except:
+            return Responce.send(500, {}, "Failed to send OTP, Please try again")
         return Responce.send(500, {}, "Server Error")
-    
-    return Responce.send(401, {}, "Eduverse supports only Gmail addresses")
+    else:
+        return Responce.send(401, {}, "Eduverse supports only Gmail addresses")
 
 @app.route("/api/v1/upload", methods=["POST"])
 def upload():
@@ -165,7 +168,7 @@ def pdf(id):
             return Responce.send(200,{"path":f"https://drive.google.com/file/d/{row[0]}/view"},"here is your file")
     else:
         return Responce.send(404, {}, "File not found")
-    return Responce.send(401, {}, "Invalid file name")
+
 
 @app.route("/api/v1/deletepdf/<id>", methods=["GET"])
 def delpdf(id):
@@ -315,6 +318,10 @@ def varify_otp():
                         return Responce.send(401,{},"Invalid OTP")
                 else:
                     return Responce.send(401,{},"Try Again")
+            else:
+                return Responce.send(401,{},"Try Again")
+        else:
+            return Responce.send(422,{},"Missing OTP")
     else:
         return Responce.send(401,{},"requied filed not found")
     

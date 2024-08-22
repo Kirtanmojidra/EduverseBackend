@@ -79,6 +79,8 @@ def UploadPdf(app, cur, con):
     # Save file and update database
     file_id = str(uuid.uuid4())
     fullpath = pdfpath+f"{file_id}"
+
+    print(f"File Upload : userid-{user_id} fileid-{file_id}")
     try:
         file.save(fullpath)
         print("file saved locally")

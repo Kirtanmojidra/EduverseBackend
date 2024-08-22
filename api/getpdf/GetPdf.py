@@ -39,7 +39,6 @@ def process(cur):
     except Exception as e:
         print(f"Error: {e}")
         return Responce.send(500, {}, "Server error")
-
     try:
         cur.execute("""
             SELECT username, title, sub, sem, pdf_path, upload_date
