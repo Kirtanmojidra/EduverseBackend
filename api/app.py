@@ -44,20 +44,6 @@ def connectDB():
 def login():
     con, cur = connectDB()
     try:
-        cookie = request.cookies.get("session")
-        if cookie:
-            try:
-                decoded_cookie = JWT.decode(cookie)
-                cur.execute("SELECT * FROM users WHERE userid=%s", (decoded_cookie['data'],))
-                row = cur.fetchone()
-                if row:
-                    if row[0] == decoded_cookie["data"]:
-                        if row[-1] == "pending":
-                            return Responce.send(402, {}, "Not verified user")
-                        return Responce.send(200, {}, "Login successful")
-            except Exception as e:
-                print(e)
-        
         data = json.loads(request.data.decode("utf-8"))
         username = data.get('username')
         password = data.get('password')
