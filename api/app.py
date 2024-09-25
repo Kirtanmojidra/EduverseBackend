@@ -1,4 +1,3 @@
-import shlex
 from flask import Flask, request, make_response, send_file, jsonify
 import os
 from .JWT import JWT
@@ -378,4 +377,4 @@ def allPDF():
         print(f"Error: {e}")
         return Responce.send(500, {}, "Server trouble")
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
