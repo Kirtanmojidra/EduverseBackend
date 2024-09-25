@@ -41,7 +41,7 @@ def process(cur):
         return Responce.send(500, {}, "Server error")
     try:
         cur.execute("""
-            SELECT username, title, sub, sem, pdf_path, upload_date
+            SELECT username, title, sub, sem, id, upload_date
             FROM pdfs
             INNER JOIN users ON pdfs.userid=users.userid
             WHERE pdfs.sem=%s AND pdfs.sub=%s

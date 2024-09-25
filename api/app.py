@@ -138,25 +138,6 @@ def getpdf():
     con, cur = connectDB()
     return GetPdf.process(cur)
 
-@app.route("/api/v1/pdf/<id>", methods=["GET"])
-def pdf(id):
-    con, cur = connectDB()
-    try:
-        print(f"SELECT * FROM pdfs WHERE pdf_path='{id}';")
-        cur.execute(f"SELECT * FROM pdfs WHERE pdf_path='{id}';")
-        row = cur.fetchone()
-    except Exception as e:
-        print(e)
-        return Responce.send(500, {}, "Server error")
-    if row:
-        if "https://drive.google.com/file/d/" in row[0]:
-            return Responce.send(200,{"path":f"{row[0]}"},"here is your file")
-        else:
-            return Responce.send(200,{"path":f"https://drive.google.com/file/d/{row[0]}/view"},"here is your file")
-    else:
-        return Responce.send(404, {}, "File not found")
-
-
 @app.route("/api/v1/deletepdf/<id>", methods=["GET"])
 def delpdf(id):
     con, cur = connectDB()
@@ -169,12 +150,12 @@ def delpdf(id):
             cur.execute("SELECT * FROM users WHERE userid=%s", (decoded_cookie['data'],))
             row = cur.fetchone()
             if row:
-                cur.execute("SELECT * FROM pdfs WHERE pdf_path=%s",  (id,))
+                cur.execute("SELECT * FROM pdfs WHERE id=%s",  (id,))
                 row2 = cur.fetchone()
                 if row2[4] == decoded_cookie["data"] or row[5]:
                     if drive.delete(row2[0]):
                         cur.execute("DELETE FROM bookmarks WHERE pdf_id=%s", (id,))
-                        cur.execute("DELETE FROM pdfs WHERE pdf_path=%s", (id,))
+                        cur.execute("DELETE FROM pdfs WHERE id=%s", (id,))
                         con.commit()
                         return Responce.send(200, {}, "Deleted Successfully")
                     else:
@@ -227,8 +208,8 @@ def getbookmarks():
             for row in r:
                 rows.append(row[0])
             pdf_ids = '\',\''.join(map(str,rows))
-            print(f"select * from pdfs inner join users on pdfs.userid = users.userid where pdf_path IN('{pdf_ids}');")
-            cur.execute(f"select * from pdfs inner join users on pdfs.userid = users.userid where pdf_path IN('{pdf_ids}');")
+            print(f"select * from pdfs inner join users on pdfs.userid = users.userid where id IN('{pdf_ids}');")
+            cur.execute(f"select * from pdfs inner join users on pdfs.userid = users.userid where id IN('{pdf_ids}');")
             r = cur.fetchall()
             pdf_obj = []
             for i  in r:
@@ -237,7 +218,7 @@ def getbookmarks():
                     "subject":i[2],
                     "sem": i[3],
                     "date": i[5].strftime("%A-%d-%m-%y"),
-                    "path": i[6],
+                    "path": i[0],
                     'username':i[8]
                 }
                 pdf_obj.append(obj)
@@ -367,7 +348,7 @@ def allPDF():
 
     try:
         cur.execute("""
-            SELECT username, title, sub, sem, pdf_path, upload_date
+            SELECT username, title, sub, sem, id, upload_date
             FROM pdfs
             INNER JOIN users ON pdfs.userid=users.userid
         """)
@@ -396,6 +377,5 @@ def allPDF():
     except Exception as e:
         print(f"Error: {e}")
         return Responce.send(500, {}, "Server trouble")
-
 if __name__ == "__main__":
     app.run(debug=True)
